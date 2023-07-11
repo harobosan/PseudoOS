@@ -2,6 +2,7 @@ from modules.dispatcher import Dispatcher
 from modules.filas import Scheduler
 from modules.memoria import MemoryManager
 from modules.recursos import DeviceManager
+from modules.arquivos import FilesystemManager
 
 
 if __name__ == '__main__':
@@ -18,8 +19,17 @@ if __name__ == '__main__':
 
 	dispatcher.process_parser("processes.txt")
 
+	fs = FilesystemManager(20, log)
+	fs.meta_file('A', 8, 3)
+	fs.meta_file('B', 5, 3)
+	fs.meta_file('C', 6, 3)
+	fs.delete_file('B', 3)
+	
+
+	print(fs)
+
 	clock = 0
-	while clock < 31:
+	while clock < 0:
 		if log > 2:
 			print()
 			print('----------------------------------------')
