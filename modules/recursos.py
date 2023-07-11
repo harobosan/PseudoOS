@@ -1,36 +1,63 @@
-resources = [[],[],[],[],[],[]]
+class DeviceManager:
+	devices = []
 
-def in_queue(pid, rid):
-	for i in range(len(resources[rid])):
-		if pid == resources[rid][i]:
-			return i
+	log = 0
 
-	return -1
+	def __init__(self, devices, log):
+		for device in devices:
+			self.devices.append([device, []])
+			self.log = log
 
-def enqueue_resource(pid, rid):
-	i = in_queue(pid, rid)
+	def __repr__(self):
+		return f'{self.devices}'
 
-	if i < 0:
-		resources[rid].append(pid)
-		return len(resources[rid])-1
+	def in_queue(self, process, did):
+		for count, place in enumerate(self.devices[did][1]):
+			if process == place:
+				return count
 
-	return i
+		return -1
 
-def dequeue_resource(rid):
-	resources[rid].pop(0)
+	def enqueue_device(self, process, did):
+		i = self.in_queue(process, did)
 
-def reserve_resources(pid, requested):
-	for i in range(6):
-		if requested&pow(2,i):
-			if enqueue_resource(pid, i) != 0:
-				return False
+		if i < 0:
+			self.devices[did][1].append(process)
+			return len(self.devices[did][1])-1
 
-	return True
+		return i
 
-def release_resources(requested):
-	for i in range(6):
-		if requested&pow(2,i):
-			dequeue_resource(i)
+	def dequeue_device(self, process, did):
+		if self.devices[did][1].count(process):
+			self.devices[did][1].remove(process)
 
-def print_resources():
-	print(resources)
+		if self.devices[did][1]:
+			self.devices[did][1][0].dormant = False
+
+	def reserve_devices(self, process):
+		reserved = True
+
+		if process.devices > pow(2,len(self.devices)-1):
+			process.kill = True
+
+			if self.log > 1:
+				print()
+				print(f'[ERROR] DeviceManager: P{process.pid} requested device not registered in this system.')
+				print(f'        Killing Process now.')
+
+			return False
+
+		for did, device in enumerate(self.devices):
+			if process.devices&pow(2,did):
+				if self.enqueue_device(process, did) != 0:
+					reserved = False
+
+					if self.log > 2:
+						print(f'[WARN] DeviceManager: P{process.pid} requested device {self.devices[did][0]} already in use.')
+
+		return reserved
+
+	def release_devices(self, process):
+		for did, device in enumerate(self.devices):
+			if process.devices&pow(2,did):
+				self.dequeue_device(process, did)

@@ -1,6 +1,3 @@
-from modules.memoria import alloc_mem, free_mem
-from modules.recursos import reserve_resources, release_resources
-
 class Process:
 	pid = 0
 	arrival = 0
@@ -13,57 +10,82 @@ class Process:
 	blocks = 0
 	offset = -1
 
-	resources = 0
-
+	devices = 0
+	dormant = False
+	kill = False
 	done = False
 
-	def __init__(self, pid, arrival, priority, time, blocks):
+	log = 0
+
+	def __init__(self, pid, arrival, priority, time, blocks, log):
 		self.pid = pid
 		self.arrival = arrival
 		self.priority = priority
 		self.time = time
 		self.blocks = blocks
+		self.log = log
 
 	def __repr__(self):
-		return "P"+str(self.pid)
+		return f'P{self.pid}'
 
 	def execute(self):
 		self.executed += 1
-		print("P"+str(self.pid)+" instruction "+str(self.executed)+" of "+str(self.time))
 
 		if self.executed == self.time:
 			self.done = True
 
+		msg = f'P{self.pid} instruction {self.executed}'
+		msg += f' of {self.time}' if self.log > 0 else ''
+		print(msg)
+
 	def set_requirements(self, printer, scanner, modem, sata):
-		self.resources += printer
-		self.resources <<= 1
-		self.resources += scanner
-		self.resources <<= 1
-		self.resources += modem
-		self.resources <<= 2
-		self.resources += sata
+		self.devices += sata
+		self.devices <<= 1
+		self.devices += modem
+		self.devices <<= 1
+		self.devices += scanner
+		self.devices <<= 2
+		self.devices += printer
 
-	def alloc_resources(self):
-		is_ready = True
+	def alloc_resources(self, memory_manager, device_manager):
+		if not self.dormant:
+			ready = True
 
-		if self.resources > 0:
-			is_ready = reserve_resources(self.pid, self.resources)
+			if self.devices > 0:
+				ready = device_manager.reserve_devices(self)
 
-		if is_ready:
-			if self.offset < 0:
-				self.offset = alloc_mem(self.blocks, self.priority)
-				is_ready = bool(self.offset >= 0)
+			if ready and self.offset < 0:
+				self.offset = memory_manager.alloc_mem(self)
+				ready = bool(self.offset >= 0)
 
-		return is_ready
+			if not ready:
+				self.dormant = True
 
-	def free_resources(self):
-		if self.resources > 0:
-			release_resources(self.resources)
+			return ready
+
+		return False
+
+	def free_resources(self, memory_manager, device_manager):
+		if self.devices > 0:
+			device_manager.release_devices(self)
 
 		if self.offset >= 0:
-			free_mem(self.blocks, self.offset)
+			memory_manager.free_mem(self)
 
-		print("P"+str(self.pid)+" return SIGINT")
+		if not self.kill:
+			print(f'P{self.pid} return SIGINT')
 
 	def print_process(self):
-		print("DISPATCHER => " + str(self.pid))
+		print()
+		print(f'DISPATCHER => P{self.pid}')
+
+		if self.log > 0:
+			print(f'       PID     : {self.pid}')
+			print(f'       Offset  : {self.offset}')
+			print(f'       Blocks  : {self.blocks}')
+			print(f'       Priority: {self.priority}')
+			print(f'       Time    : {self.time}')
+			print(f'       Printer : 1-{bool(self.devices&pow(2,0))}   2-{bool(self.devices&pow(2,1))}')
+			print(f'       Scanner : 1-{bool(self.devices&pow(2,2))}')
+			print(f'       Modem   : 1-{bool(self.devices&pow(2,3))}')
+			print(f'       Drives  : 1-{bool(self.devices&pow(2,4))}   2-{bool(self.devices&pow(2,5))}')
