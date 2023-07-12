@@ -4,7 +4,7 @@ class FilesystemManager:
 	superblock = []
 
 	log = 0
-
+	#iniciliazida filesystem manager
 	def __init__(self, storage, log):
 		self.storage = '0'*storage
 		self.free = storage

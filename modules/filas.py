@@ -13,7 +13,7 @@ class Scheduler:
 
 	def __repr__(self):
 		return f'{self.queues}'
-
+	#coloca um processo na fila
 	def enqueue_process(self, process):
 		self.queues[process.priority].append(process)
 
