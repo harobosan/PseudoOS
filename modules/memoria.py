@@ -11,6 +11,7 @@ class MemoryManager:
     def __repr__(self):
         return f'[{self.memory[:self.reserved]}][{self.memory[self.reserved:]}]'
 
+    #tenta alocar um processo em memoria
     def alloc_mem(self, process):
         if process.offset >= 0:
             return process.offset

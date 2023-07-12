@@ -11,6 +11,7 @@ class Scheduler:
     def __repr__(self):
         return f'{self.queues}'
 
+    #enfileira um processo na fila de processos
     def enqueue_process(self, process):
         if len(self.queues[process.priority]) < 1000:
             self.queues[process.priority].append(process)
@@ -18,17 +19,20 @@ class Scheduler:
             return True
 
         return False
-
+    
+    #tira um processo da fila de processos
     def dequeue_process(self, queue):
         self.start = True
         return self.queues[queue].pop(0)
-
+    
+    #tira o processo da fila e coloca de vola com uma prioridade diferente
     def requeue_process(self, src, dst):
         self.start = True
         process = self.dequeue_process(src)
         process.priority = dst
         self.enqueue_process(process)
 
+    #executa os processos das filas, se um processo for muito grande, a prioridade dele diminui e vai sendo refilado
     def execute_processes(self, incoming, memory_manager, device_manager, file_manager):
         for count, queue in enumerate(self.queues):
             if queue:

@@ -3,6 +3,7 @@ from modules.arquivos import FilesystemManager
 
 
 class Dispatcher:
+    #inicializacao da classe
     def __init__(self, log):
         self.arrival_list = []
         self.ready_list = []
@@ -14,7 +15,8 @@ class Dispatcher:
 
     def __repr__(self):
         return f'{self.arrival_list}\n{self.ready_list}'
-
+    
+    #lê um arquivo txt com as informaçoes do processo por linha, e coloca os processos na lista global de chegada por ordem de chegada
     def process_parser(self, file):
         processes = open(file,'r').readlines()
         self.pid_list = [None]*len(processes)
@@ -31,6 +33,7 @@ class Dispatcher:
 
         self.arrival_list.sort(key=lambda process: process.arrival)
 
+    #tira os processos da lista de chegada e coloca na lista de prontos
     def ready_processess(self, clock, memory_manager, device_manager, scheduler):
         transfer = []
         for process in self.arrival_list:
@@ -57,6 +60,7 @@ class Dispatcher:
         for process in transfer:
             self.ready_list.remove(process)
 
+    #le um arquivo com informacoes do filesystem e coloca na lista global de operacoes
     def filesystem_parser(self, file, mode):
         filesystem = open(file,'r').readlines()
 
@@ -84,7 +88,8 @@ class Dispatcher:
             self.oid_list.append([oid, pid, op, name[0], blocks])
 
         return file_manager
-
+    
+    #imprime na tela operaçoes 
     def ready_operations(self):
         for operation in self.oid_list:
             if operation[1] < len(self.pid_list):
@@ -106,6 +111,7 @@ class Dispatcher:
                 print(f'F{operation[0]} operation FAILED')
                 print()
 
+    #imprime as operacoes e executa
     def execute_operations(self, file_manager):
         for operation in self.oid_list:
             if operation[1] < len(self.pid_list):
