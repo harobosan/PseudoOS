@@ -17,6 +17,7 @@ class Process:
 
 	log = 0
 
+	#inicializa os processos
 	def __init__(self, pid, arrival, priority, time, blocks, log):
 		self.pid = pid
 		self.arrival = arrival
@@ -27,7 +28,8 @@ class Process:
 
 	def __repr__(self):
 		return f'P{self.pid}'
-
+	
+	#executa processo e printa
 	def execute(self):
 		self.executed += 1
 
