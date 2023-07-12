@@ -1,69 +1,75 @@
 class MemoryManager:
-	memory = ''
-	reserved = 0
-	queue = []
-	free = 0
+    def __init__(self, memory, reserved, log):
+        self.memory = '0'*memory
+        self.queue = []
 
-	log = 0
+        self.reserved = reserved
+        self.free = memory
 
-	def __init__(self, memory, reserved, log):
-		self.memory = '0'*memory
-		self.reserved = reserved
-		self.free = memory
-		self.log = log
+        self.log = log
 
-	def __repr__(self):
-		return '|'+self.memory[:self.reserved]+'|'+self.memory[self.reserved:]+'|'
+    def __repr__(self):
+        return f'[{self.memory[:self.reserved]}][{self.memory[self.reserved:]}]'
 
-	def alloc_mem(self, process):
-		if process.blocks <= self.free:
-			if process.priority:
-				segment = self.memory[self.reserved:].split('0'*process.blocks, 1)
-				segment[0] = self.memory[:self.reserved]+segment[0]
-			else:
-				segment = self.memory.split('0'*process.blocks, 1)
+    def alloc_mem(self, process):
+        if process.offset >= 0:
+            return process.offset
 
-			if len(segment) == 2:
-				self.memory = segment[0] + '1'*process.blocks + segment[1]
-				self.free -= process.blocks
-				return len(segment[0])
+        if process.blocks <= self.free:
+            if process.priority:
+                segment = self.memory[self.reserved:].split('0'*process.blocks, 1)
+                segment[0] = self.memory[:self.reserved]+segment[0]
+            else:
+                segment = self.memory.split('0'*process.blocks, 1)
 
-			if self.log > 2:
-				print(f'[WARN] MemoryManager: P{process.pid} requested {process.blocks} blocks, not enough contiguous block were found.')
+            if len(segment) == 2:
+                self.memory = segment[0] + '1'*process.blocks + segment[1]
+                self.free -= process.blocks
+                return len(segment[0])
 
-			self.queue.append(process)
-			return -1
+            if self.log > 2:
+                print(f'[WARN] MemoryManager: not enough memory.')
+                print(f'       P{process.pid} could not find {process.blocks} contiguous blocks.')
+                print(f'       Process sleeping now.')
+                print()
 
-		if process.blocks > len(self.memory):
-			process.kill = True
+            self.queue.append(process)
+            return -1
 
-			if self.log > 1:
-				print()
-				print(f'[ERROR] MemoryManager: P{process.pid} requested {process.blocks} blocks, not enough memory in this system.')
-				print(f'        Killing Process now.')
+        if process.blocks > len(self.memory):
+            process.kill = True
 
-			return -1
+            if self.log > 1:
+                print(f'[ERROR] MemoryManager: not enough memory.')
+                print(f'        P{process.pid} needs {process.blocks} blocks, the system can only ever offer {len(self.memory)}.')
+                print(f'        Killing process now.')
+                print()
 
-		elif self.log > 2:
-			print(f'[WARN] MemoryManager: P{process.pid} requested {process.blocks} blocks, only {self.free} left.')
+            return -1
 
-		self.queue.append(process)
-		return -1
+        if self.log > 2:
+            print(f'[WARN] MemoryManager: not enough memory.')
+            print(f'       P{process.pid} requested {process.blocks} blocks, only {self.free} left.')
+            print(f'       Process sleeping now.')
+            print()
 
-	def free_mem(self, process):
-		if self.queue.count(process):
-			self.queue.remove(process)
-		else:
-			self.memory = self.memory[:process.offset] + '0'*process.blocks + self.memory[process.offset+process.blocks:]
-			self.free += process.blocks
+        self.queue.append(process)
+        return -1
 
-		if process.offset > 0:
+    def free_mem(self, process):
+        if self.queue.count(process):
+            self.queue.remove(process)
+        else:
+            self.memory = self.memory[:process.offset] + '0'*process.blocks + self.memory[process.offset+process.blocks:]
+            self.free += process.blocks
 
-			transfer = []
-			for proc in self.queue:
-				if proc.blocks <= self.free:
-					proc.dormant = False
-					transfer.append(proc)
+        if process.offset > 0:
 
-			for proc in transfer:
-				self.queue.remove(proc)
+            transfer = []
+            for proc in self.queue:
+                if proc.blocks <= self.free:
+                    proc.dormant = False
+                    transfer.append(proc)
+
+            for proc in transfer:
+                self.queue.remove(proc)

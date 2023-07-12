@@ -2,49 +2,56 @@ from modules.dispatcher import Dispatcher
 from modules.filas import Scheduler
 from modules.memoria import MemoryManager
 from modules.recursos import DeviceManager
-from modules.arquivos import FilesystemManager
 
 
 if __name__ == '__main__':
-	log = 3						#1
-	time_slices = [-1, 2, 4, 8]
-	available_memory = 16 		#1024
-	reserved_memory = 8 		#64
-	device_list = ['IMP1','IMP2', 'SCAN', 'MODN', 'SAT1', 'SAT2']
+    log = 6                        #1
+    time_slices = [-1, 2, 4, 8]
+    available_memory = 1024         #1024
+    reserved_memory = 64             #64
+    device_list = ['IMP1','IMP2', 'SCAN', 'MODN', 'SAT1', 'SAT2']
 
-	dispatcher = Dispatcher(log)
-	scheduler = Scheduler(time_slices, log)
-	memory = MemoryManager(available_memory, reserved_memory, log)
-	devices = DeviceManager(device_list, log)
+    dispatcher = Dispatcher(log)
+    scheduler = Scheduler(time_slices, log)
+    memory = MemoryManager(available_memory, reserved_memory, log)
+    devices = DeviceManager(device_list, log)
 
-	dispatcher.process_parser("processes.txt")
+    dispatcher.process_parser('tests/processes.txt')
+    files = dispatcher.filesystem_parser('tests/files.txt', 'synchronous')
+    if files.mode != 'asynchronous':
+        dispatcher.ready_operations()
 
-	fs = FilesystemManager(20, log)
-	fs.meta_file('A', 8, 3)
-	fs.meta_file('B', 5, 3)
-	fs.meta_file('C', 6, 3)
-	fs.delete_file('B', 3)
-	
+    clock = 0
+    while True:#clock < 31:
+        if log > 4:
+            print()
+            print('----------------------------------------')
+            print(f'CYCLE: {clock}')
+            print('----------------------------------------')
 
-	print(fs)
+        dispatcher.ready_processess(clock, memory, devices, scheduler)
+        done = not scheduler.execute_processes(dispatcher.arrival_list, memory, devices, files)
 
-	clock = 0
-	while clock < 0:
-		if log > 2:
-			print()
-			print('----------------------------------------')
-			print(f'CYCLE: {clock}')
-			print('----------------------------------------')
+        if log > 4:
+            print()
+            print(f'[ARRIVAL]  > {dispatcher.arrival_list}')
+            print(f'[READYING] > {dispatcher.ready_list}')
+            print(f'[QUEUES]   > {scheduler}')
+            print(f'[DEVICES]  > {devices}')
 
-		dispatcher.ready_processess(clock, memory, devices, scheduler)
-		scheduler.execute_processes(memory, devices)
+            if log > 5:
+                print(f'[MEMORY]   > {memory}')
+                print(f'[STORAGE]  > {files}')
 
-		if log > 2:
-			print()
-			print(f'[READYING] > {dispatcher.ready_list}')
-			print(f'[QUEUES]   > {scheduler}')
-			print(f'[DEVICES]  > {devices}')
-			if log > 3:
-				print(memory)
+        if done:
+            if files.mode == 'asynchronous':
+                dispatcher.execute_operations(files)
 
-		clock += 1
+            if log > 3:
+                print()
+                print(f'[INFO]     > {clock-1} cycles to finish all processes.')
+                print(f'[STORAGE]  > {files}')
+
+            break
+
+        clock += 1
