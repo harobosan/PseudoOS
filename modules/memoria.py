@@ -1,3 +1,7 @@
+#memory= abstraida em string de bits
+#reserved= memoria reservado em tempo real
+#free= memoria livre
+#log= ajuda no debug e mostra o output
 class MemoryManager:
     def __init__(self, memory, reserved, log):
         self.memory = '0'*memory
@@ -56,7 +60,8 @@ class MemoryManager:
 
         self.queue.append(process)
         return -1
-
+    
+    #libera o processo da memoria
     def free_mem(self, process):
         if self.queue.count(process):
             self.queue.remove(process)

@@ -1,10 +1,14 @@
 class Process:
     #pid=id do processo
-	#arrival=ordem de chegada
+	#arrival=momento de chegada
 	#prioriry=prioridade do processo
 	#time= tempo para complecao do processo
 	#executed= quantas vezes o processo foi executado
 	#lifetime= tempo de vida do processo
+    #blocks= numero de blocos de memoria necessarios
+    #devices= dispositivos usados no processo
+    #dormant, kill e done= booleanos que dizem o estado do processo
+    #log= informacoes
     def __init__(self, pid, arrival, priority, time, blocks, log):
         self.pid = pid
         self.arrival = arrival
@@ -69,6 +73,7 @@ class Process:
             print(f'P{self.pid} return SIGINT')
             print()
 
+    #executa um processo e deixa ele no estado de done
     def execute_process(self):
         self.executed += 1
 
