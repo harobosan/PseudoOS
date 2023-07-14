@@ -9,7 +9,6 @@
 
 ## Testes:
 
-    $ make install
     $ make static
 
 ## Executar com configurações padrão:
