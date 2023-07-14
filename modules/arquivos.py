@@ -1,9 +1,14 @@
-#storage= string de bits que abstrai a memoria
-#superblock= representa o superbloco
-#mode= modo de executacao
-#free= espaco livre
-#log informacoes
 class FilesystemManager:
+    '''
+    Gerenciador de Sistema de Arquivos
+
+    storage= string representando blocos de disco
+    superblock= lista de metadados de arquivos
+    mode= string de modo de operação
+    free= quantidade de blocos de disco livres
+    log= nível de verbose
+    '''
+
     def __init__(self, storage, mode, log):
         self.storage = '0'*storage
         self.superblock = []
@@ -15,20 +20,36 @@ class FilesystemManager:
 
     def __repr__(self):
         return f'[{self.storage}]'
-    
-    #seta um arquivo no superbloco
+
     def set_file(self, name, offset, blocks):
+        '''
+        set_file(self, name, offset, blocks)
+
+        escreve um arquivo de nome 'name' diretamente no disco
+        na posição 'offset' em uma quantidade 'blocks' de blocos
+        '''
+
         if offset+blocks <= len(self.storage):
             self.storage = self.storage[:offset] + name*blocks + self.storage[offset+blocks:]
             self.superblock.append([name, offset, blocks, -1])
 
-    #cria um arquivo no superbloco
     def write_file(self, name, blocks, pid):
+        '''
+        write_file(self, name, blocks, pid)
+
+        escreve um arquivo em disco de nome 'name' com 'blocks' blocs de comprimento
+        caso encontre espaço suficiente, guarda os metadados em superblock
+
+        retorna: bool se a operação conseguiu escrever o arquivo
+        '''
+
         for metadata in self.superblock:
             if metadata[0] == name:
                 if self.log > 2:
-                    print(f'[WARN] FilesystemManager: file already exists.')
-                    print(f'       P{pid} failed to create file {name} as it already exists on disk.')
+                    print('[WARN] FilesystemManager: file already exists.')
+                    msg = f'       P{pid} failed to create file'
+                    msg += f' {name} as it already exists on disk.'
+                    print(msg)
 
                 return False
 
@@ -41,43 +62,55 @@ class FilesystemManager:
                 self.superblock.append([name, len(segment[0]), blocks, pid])
 
                 if self.log > 3:
-                    print(f'[INFO] FilesystemManager: file created successfully.')
+                    print('[INFO] FilesystemManager: file created successfully.')
                     msg = f'       P{pid} created file {name} (block'
-                    msg += f's {len(segment[0])}-{len(segment[0])+blocks-1})' if blocks > 1 else f' {len(segment[0])})'
+                    msg_1 = f's {len(segment[0])}-{len(segment[0])+blocks-1})'
+                    msg_2 = f' {len(segment[0])})'
+                    msg += msg_1 if blocks > 1 else msg_2
                     print(msg)
 
                 return True
 
         if self.log > 2:
-            print(f'[WARN] FilesystemManager: not enough disk available.')
+            print('[WARN] FilesystemManager: not enough disk available.')
             print(f'       P{pid} failed to allocate {blocks} blocks for file {name}.')
 
         return False
 
-    #deleta um arquivo no superbloco
     def delete_file(self, name, owner):
+        '''
+        delete_file(self, name, owner)
+
+        libera o espaço de disco ocupado por um arquivo de nome 'name'
+        se 'owner' tiver permissão para fazê-lo
+
+        retorna: bool se a operação conseguiu deletar o arquivo
+        '''
+
         for metadata in self.superblock:
             if metadata[0] == name:
                 if owner.priority:
                     if  owner.pid != metadata[2]:
                         if self.log > 2:
-                            print(f'[WARN] FilesystemManager: permission denied.')
+                            print('[WARN] FilesystemManager: permission denied.')
                             print(f'       P{owner.pid} has no permission to manage file {name}.')
 
                         return False
 
-                self.storage = self.storage[:metadata[1]] + '0'*metadata[2] + self.storage[metadata[1]+metadata[2]:]
+                pre = self.storage[:metadata[1]]
+                pos = self.storage[metadata[1]+metadata[2]:]
+                self.storage = pre + '0'*metadata[2] + pos
                 self.free -= metadata[2]
                 self.superblock.remove(metadata)
 
                 if self.log > 3:
-                    print(f'[INFO] FilesystemManager: file deleted successfully.')
+                    print('[INFO] FilesystemManager: file deleted successfully.')
                     print(f'       P{owner.pid} removed file {name} from the disk.')
 
                 return True
 
         if self.log > 2:
-            print(f'[WARN] FilesystemManager: file not found.')
+            print('[WARN] FilesystemManager: file not found.')
             print(f'       P{owner.pid} could not delete file {name} as it does not exist.')
 
         return False

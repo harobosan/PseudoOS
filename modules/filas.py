@@ -1,4 +1,14 @@
 class Scheduler:
+    '''
+    Escalonador
+
+    queues= lista de filas de execução
+    slices= lista de time slices alocados para cada fila
+    quantum= contador de quantum
+    start= flag de estado
+    log= nível de verbose
+    '''
+
     def __init__(self, slices, log):
         self.queues = [[] for x in range(len(slices))]
         self.slices = slices
@@ -11,29 +21,55 @@ class Scheduler:
     def __repr__(self):
         return f'{self.queues}'
 
-    #enfileira um processo na fila de processos
     def enqueue_process(self, process):
+        '''
+        enqueue_process(self, process)
+
+        adiciona um processo à fila equivalente à prioridade do processo
+
+        retorno: bool se a fila possui posições restantes para executar o processo
+        '''
+
         if len(self.queues[process.priority]) < 1000:
             self.queues[process.priority].append(process)
 
             return True
 
         return False
-    
-    #tira um processo da fila de processos
+
     def dequeue_process(self, queue):
+        '''
+        dequeue_process(self, queue)
+
+        remove um processo da fila de prioridade 'queue'
+
+        retorno: o processo removido da fila
+        '''
+
         self.start = True
         return self.queues[queue].pop(0)
-    
-    #tira o processo da fila e coloca de vola com uma prioridade diferente
+
     def requeue_process(self, src, dst):
+        '''
+        requeue_process(self, src, dst)
+
+        move um processo da fila de prioridade 'src' para a fila de prioridade 'dst'
+        '''
+
         self.start = True
         process = self.dequeue_process(src)
         process.priority = dst
         self.enqueue_process(process)
 
-    #executa os processos das filas, se um processo for muito grande, a prioridade dele diminui e vai sendo refilado
     def execute_processes(self, incoming, memory_manager, device_manager, file_manager):
+        '''
+        execute_processes(self, incoming, memory_manager, device_manager, file_manager)
+
+        executa um ciclo de CPU
+
+        retorno: bool se ainda há processos a serem executados
+        '''
+
         for count, queue in enumerate(self.queues):
             if queue:
                 if self.start:
@@ -43,7 +79,8 @@ class Scheduler:
                     print(msg)
                     self.start = False
 
-                executed = queue[0].execute_process()
+                queue[0].execute_process()
+
                 if file_manager.mode == 'synchronous':
                     if queue[0].operations:
                         queue[0].print_operation(queue[0].operations[0])
@@ -59,8 +96,10 @@ class Scheduler:
                     if queue[0].operations:
                         if file_manager.mode == 'synchronous':
                             if self.log > 2:
-                                print(f'[WARN] FilesystemManager: file operations pending.')
-                                print(f'       P{queue[0].pid} ended without completing {len(queue[0].operations)} file operations in its queue.')
+                                print('[WARN] FilesystemManager: file operations pending.')
+                                msg = f'       P{queue[0].pid} ended without completing'
+                                msg += f' {len(queue[0].operations)} file operations in its queue.'
+                                print(msg)
 
                         elif file_manager.mode == 'batch':
                             queue[0].print_operations()

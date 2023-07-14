@@ -5,10 +5,10 @@ from modules.recursos import DeviceManager
 
 
 if __name__ == '__main__':
-    log = 6                        #1
+    log = 6                         #1
     time_slices = [-1, 2, 4, 8]
     available_memory = 1024         #1024
-    reserved_memory = 64             #64
+    reserved_memory = 64            #64
     device_list = ['IMP1','IMP2', 'SCAN', 'MODN', 'SAT1', 'SAT2']
 
     dispatcher = Dispatcher(log)
