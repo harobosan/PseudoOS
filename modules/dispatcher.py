@@ -1,6 +1,7 @@
 from modules.processos import Process
 from modules.arquivos import FilesystemManager
 
+
 class Dispatcher:
     '''
     Dispatcher
@@ -24,40 +25,45 @@ class Dispatcher:
     def __repr__(self):
         return f'{self.arrival_list}\n{self.ready_list}'
 
-    def process_parser(self, file):
+    def process_parser(self, filename):
         '''
-        process_parser(self, file)
+        process_parser(self, R0914)
 
-        lê um arquivo de path 'file', gera processos à partir das linhas
+        lê um arquivo de path 'filename', gera processos à partir das linhas
         formatadas do arquivo e armazena os processos na lista global pid_list
         '''
-        processes = open(file,'r').readlines()
-        self.pid_list = [None]*len(processes)
-        self.ready_list = []
 
-        for pid, line in enumerate(processes):
-            p = line.split(', ')
-            if len(p) < 2:
-                p = line.split(',')
+        with open(filename, 'r', encoding='utf-8') as file:
+            processes = file.readlines()
+            self.pid_list = [None]*len(processes)
+            self.ready_list = []
 
-            self.pid_list[pid] = Process(pid, int(p[0]), int(p[1]), int(p[2]),int(p[3]), self.log)
-            self.pid_list[pid].set_requirements(int(p[4]), int(p[5]), int(p[6]), int(p[7]))
-            self.arrival_list.append(self.pid_list[pid])
+            for pid, line in enumerate(processes):
+                p = line.split(', ')
+                if len(p) < 2:
+                    p = line.split(',')
+
+                for i, n in enumerate(p):
+                    p[i] = int(n)
+
+                self.pid_list[pid] = Process(pid, p[0], p[1], p[2], p[3], self.log)
+                self.pid_list[pid].set_requirements(p[4], p[5], p[6], p[7])
+                self.arrival_list.append(self.pid_list[pid])
 
         self.arrival_list.sort(key=lambda process: process.arrival)
 
-    def ready_processess(self, clock, memory_manager, device_manager, scheduler):
+    def ready_processess(self, cycle, memory_manager, device_manager, scheduler):
         '''
-        ready_processess(self, clock, memory_manager, device_manager, scheduler)
+        ready_processess(self, cycle, memory_manager, device_manager, scheduler)
 
-        move os processos que chegam à CPU para a fila de preparo no ciclo 'clock',
+        move os processos que chegam à CPU para a fila de preparo no ciclo 'cycle',
         remove processos mortos na fila preparo e tenta alocar recursos rquisitados
         pelos processos na fila para movê-los para a fila de execução quando prontos
         '''
 
         transfer = []
         for process in self.arrival_list:
-            if process.arrival > clock:
+            if process.arrival > cycle:
                 break
 
             self.ready_list.append(process)
@@ -80,41 +86,43 @@ class Dispatcher:
         for process in transfer:
             self.ready_list.remove(process)
 
-    def filesystem_parser(self, file, mode):
+    def filesystem_parser(self, filename, mode):
         '''
-        filesystem_parser(self, file, mode)
+        filesystem_parser(self, filename, mode)
 
-        lê um arquivo de path 'file', gera operações de arquivo em disco à partir das linhas
+        lê um arquivo de path 'filename', gera operações de arquivo em disco à partir das linhas
         formatadas do arquivo, armazena os processos na lista global oid_list e cria um
         objeto de gerenciador de sistema de arquivos com o modo de operação 'mode' e
-        especificações encontradas em 'file'
+        especificações encontradas em 'filename'
 
         retorna: objeto gerenciador de sistema de arquivos
         '''
-        filesystem = open(file,'r').readlines()
 
-        file_manager = FilesystemManager(int(filesystem.pop(0)), mode, self.log)
+        with open(filename, 'r', encoding='utf-8') as file:
+            filesystem = file.readlines()
 
-        for i in range(int(filesystem.pop(0))-1,-1,-1):
-            line = filesystem.pop(i)
-            f = line.split(', ')
-            if len(f) < 2:
-                f = line.split(',')
+            file_manager = FilesystemManager(int(filesystem.pop(0)), mode, self.log)
 
-            file_manager.set_file(f[0], int(f[1]), int(f[2]))
+            for i in range(int(filesystem.pop(0))-1,-1,-1):
+                line = filesystem.pop(i)
+                f = line.split(', ')
+                if len(f) < 2:
+                    f = line.split(',')
 
-        for i in range(len(filesystem)):
-            line = filesystem[i].split(',')
-            oid = len(self.oid_list)
-            pid = int(line[0])
-            op = int(line[1])
-            name = line[2]
-            if op:
-                blocks = 0
-            else:
-                blocks = int(line[3])
+                file_manager.set_file(f[0], int(f[1]), int(f[2]))
 
-            self.oid_list.append([oid, pid, op, name[0], blocks])
+            for count, line in enumerate(filesystem):
+                linedata = filesystem[count].split(',')
+                oid = len(self.oid_list)
+                pid = int(linedata[0])
+                op = int(linedata[1])
+                name = linedata[2]
+                if op:
+                    blocks = 0
+                else:
+                    blocks = int(linedata[3])
+
+                self.oid_list.append([oid, pid, op, name[0], blocks])
 
         return file_manager
 
@@ -151,6 +159,13 @@ class Dispatcher:
         'asynchronous'
         '''
 
+        print('FILESYSTEM =>')
+        print()
+
+        if self.log > 4:
+            print(f'[STORAGE]  > {file_manager}')
+            print()
+
         for operation in self.oid_list:
             if operation[1] < len(self.pid_list):
                 self.pid_list[operation[1]].queue_operation(operation)
@@ -174,7 +189,6 @@ class Dispatcher:
                 print()
 
                 if self.log > 4:
-                    print()
                     print(f'[STORAGE]  > {file_manager}')
                     print()
 

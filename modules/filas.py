@@ -5,15 +5,17 @@ class Scheduler:
     queues= lista de filas de execução
     slices= lista de time slices alocados para cada fila
     quantum= contador de quantum
+    mode= modo de contagem do quantum
     start= flag de estado
     log= nível de verbose
     '''
 
-    def __init__(self, slices, log):
-        self.queues = [[] for x in range(len(slices))]
+    def __init__(self, slices, mode, log):
+        self.queues = [[] for x in slices]
         self.slices = slices
 
-        self.quantum = 0
+        self.quantum = .0
+        self.mode = mode
         self.start = True
 
         self.log = log
@@ -29,6 +31,9 @@ class Scheduler:
 
         retorno: bool se a fila possui posições restantes para executar o processo
         '''
+
+        if process.priority > len(self.queues)-1:
+            process.priority = len(self.queues)-1
 
         if len(self.queues[process.priority]) < 1000:
             self.queues[process.priority].append(process)
@@ -61,9 +66,9 @@ class Scheduler:
         process.priority = dst
         self.enqueue_process(process)
 
-    def execute_processes(self, incoming, memory_manager, device_manager, file_manager):
+    def execute_processes(self, delta, incoming, memory_manager, device_manager, file_manager):
         '''
-        execute_processes(self, incoming, memory_manager, device_manager, file_manager)
+        execute_processes(self, delta_t, incoming, memory_manager, device_manager, file_manager)
 
         executa um ciclo de CPU
 
@@ -87,7 +92,13 @@ class Scheduler:
                         queue[0].execute_operation(file_manager)
 
                 if self.slices[count] > 0:
-                    self.quantum += 1
+                    if self.mode == 'cycle':
+                        self.quantum += 1
+                    else:
+                        self.quantum += delta
+
+                        if self.log > 3:
+                            print(f'   quantum {round(self.quantum,2)} of {self.slices[count]}')
 
                 if queue[0].done:
                     if self.slices[count] > 0:
@@ -109,14 +120,14 @@ class Scheduler:
 
                     self.dequeue_process(count).free_resources(memory_manager, device_manager)
 
-                if self.quantum == self.slices[count]:
+                if self.slices[count] > 0 and self.quantum > self.slices[count]:
                     self.requeue_process(count, count + 1 if count<len(self.queues)-1 else 0)
                     self.quantum = 0
                     print()
 
-                return True
+                return False
 
         if incoming:
-            return True
+            return False
 
-        return False
+        return True

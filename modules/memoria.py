@@ -14,7 +14,8 @@ class MemoryManager:
         self.memory = '0'*memory
         self.queue = []
 
-        self.reserved = reserved
+        self.reserved = reserved if reserved < memory else memory
+        self.limit = memory
         self.free = memory
 
         self.log = log
@@ -33,6 +34,20 @@ class MemoryManager:
 
         if process.offset >= 0:
             return process.offset
+
+        if process.blocks > (self.limit-self.reserved if process.priority else self.limit):
+            process.kill = True
+
+            if self.log > 1:
+                print('[ERROR] MemoryManager: not enough memory.')
+                msg = f'        P{process.pid} needs {process.blocks} blocks,'
+                msg += ' the system can only ever offer'
+                msg+= f' {self.limit-self.reserved if process.priority else self.limit}.'
+                print(msg)
+                print('        Killing process now.')
+                print()
+
+            return -1
 
         if process.blocks <= self.free:
             if process.priority:
@@ -53,19 +68,6 @@ class MemoryManager:
                 print()
 
             self.queue.append(process)
-            return -1
-
-        if process.blocks > len(self.memory):
-            process.kill = True
-
-            if self.log > 1:
-                print('[ERROR] MemoryManager: not enough memory.')
-                msg = f'        P{process.pid} needs {process.blocks} blocks,'
-                msg += f' the system can only ever offer {len(self.memory)}.'
-                print(msg)
-                print('        Killing process now.')
-                print()
-
             return -1
 
         if self.log > 2:

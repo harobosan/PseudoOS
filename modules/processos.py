@@ -160,6 +160,7 @@ class Process:
 
         if self.operations:
             operation = self.operations.pop(0)
+            self.print_operation(operation)
 
             result = False
             if operation[2]:
