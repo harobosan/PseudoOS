@@ -1,3 +1,5 @@
+#devices= lista de dispositivos
+#log= informacoes
 class DeviceManager:
     def __init__(self, devices, log):
         self.devices = []
@@ -10,6 +12,7 @@ class DeviceManager:
     def __repr__(self):
         return f'{self.devices}'
 
+    #retorna os dispositivos procurados na lista
     def in_queue(self, process, did):
         for count, place in enumerate(self.devices[did][1]):
             if process == place:
@@ -17,6 +20,7 @@ class DeviceManager:
 
         return -1
 
+    #coloca um dispositivo na lista
     def enqueue_device(self, process, did):
         i = self.in_queue(process, did)
 
@@ -26,6 +30,7 @@ class DeviceManager:
 
         return i
 
+    #remove um dispositivo da lista
     def dequeue_device(self, process, did):
         if self.devices[did][1].count(process):
             self.devices[did][1].remove(process)
@@ -33,6 +38,7 @@ class DeviceManager:
         if self.devices[did][1]:
             self.devices[did][1][0].dormant = False
 
+    #reserva um dispositivo para um processo
     def reserve_devices(self, process):
         reserved = True
 
@@ -60,6 +66,7 @@ class DeviceManager:
 
         return reserved
 
+    #libera um dispositivo da lista
     def release_devices(self, process):
         for did, _ in enumerate(self.devices):
             if process.devices&pow(2,did):

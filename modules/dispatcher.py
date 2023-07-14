@@ -1,9 +1,11 @@
 from modules.processos import Process
 from modules.arquivos import FilesystemManager
 
-
+#arrival= lista de chegada de processos
+#ready= lista de prontos do processo
+#pid_list= lista de processos por id
+#oid_list= lista de operacoes por id
 class Dispatcher:
-    #inicializacao da classe
     def __init__(self, log):
         self.arrival_list = []
         self.ready_list = []

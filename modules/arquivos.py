@@ -1,3 +1,8 @@
+#storage= string de bits que abstrai a memoria
+#superblock= representa o superbloco
+#mode= modo de executacao
+#free= espaco livre
+#log informacoes
 class FilesystemManager:
     def __init__(self, storage, mode, log):
         self.storage = '0'*storage
@@ -10,12 +15,14 @@ class FilesystemManager:
 
     def __repr__(self):
         return f'[{self.storage}]'
-
+    
+    #seta um arquivo no superbloco
     def set_file(self, name, offset, blocks):
         if offset+blocks <= len(self.storage):
             self.storage = self.storage[:offset] + name*blocks + self.storage[offset+blocks:]
             self.superblock.append([name, offset, blocks, -1])
 
+    #cria um arquivo no superbloco
     def write_file(self, name, blocks, pid):
         for metadata in self.superblock:
             if metadata[0] == name:
@@ -47,6 +54,7 @@ class FilesystemManager:
 
         return False
 
+    #deleta um arquivo no superbloco
     def delete_file(self, name, owner):
         for metadata in self.superblock:
             if metadata[0] == name:
