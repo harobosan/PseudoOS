@@ -20,20 +20,20 @@ Os argumentos passados através de make run são do formato:
 <argname>-<argvalue1>-<argvalue2>-<argvalue3>
 
 Tipos de argumentos:
-log-<int>
+log-< int >
     Nível de verbose dos outputs do Pseudo-OS
 
-    ex.: make run log-6
+    $ make run log-6
 
-proc-<str>
+proc-< str >
     Path para o arquivo de processos
 
-    ex.: make run tests/processes.txt
+    $ make run tests/processes.txt
 
-file-<str>
+file-< str >
     Path para o arquivo de sistema de arquivos
 
-    ex.: make run file-tests/files.txt
+    $ make run file-tests/files.txt
 
 cmode-< time | cycle >
     Modo de operação do clock, pode ser 'time' para quantum medido em milisegundos
@@ -43,27 +43,27 @@ fmode-< synchronous | asynchronous | batch >
     Modo de operação do sistema de arquivos, define em que momentos as operações de
     arquivos serão executadas
 
-slices-<int>
+slices-< int >
     Definição dos time-slices das filas de escalonamento round robin. Pode receber
     multiplos argumentos separados por - e a quantidade de filas no escalonar será
     o número de argumentos +1 (fila de alta prioridade FIFO)
 
-    ex.: make run slices-1-1-2
+    $ make run slices-1-1-2
 
-memory-<int>
+memory-< int >
     Definição da quantidade de memória que o sistema possui.
 
-    ex.: make run memory-1024
+    $ make run memory-1024
 
-reserved-<int>
+reserved-< int >
     Definição da partição da memória principal reservada para processos de alta
     prioridade.
 
-    ex.: make run memory-1024 reserved-64
+    $ make run memory-1024 reserved-64
 
-devices-<str>
+devices-< str >
     Definição da quantidade e nome de cada dispositivo do sitemas, pode receber
     multiplos argumentos e nomes e gera um dispositivo mapeado em ordem para cada
     argumento.
 
-    ex.: make run devices-SATA_1-SATA_2-SCANNER
+    $ make run devices-SATA_1-SATA_2-SCANNER
