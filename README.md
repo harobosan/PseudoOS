@@ -1,22 +1,27 @@
 # PseudoOS
 
 Dependências: python3 e make
+
     $ apt update
     $ apt install python3 make
     $ apt install pip
     $ make install
 
 Testes:
+
     $ make install
     $ make static
 
 Executar com configurações padrão:
+
     $ make
 
 Executar com configurações diferentes:
+
     $ make run <args>
 
 Os argumentos passados através de make run são do formato:
+
     $ <argname>-<argvalue1>-<argvalue2>-<argvalue3>
 
 Tipos de argumentos:
