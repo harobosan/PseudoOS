@@ -2,26 +2,26 @@ class MemoryManager:
     '''
     Gerenciador de Memória
 
-    memory= string representando blocos de memória
-    queue= fila de espera de processos
-    reserved= quantidade de blocos de memória reservado
-              para processos de alta prioridade
+    memory= strings representando blocos de memória
+            particionados em parte reservada e de
+            usuário
+    queues= filas de espera de processos
     free= quantidade de blocos de memória livres
     log= nível de verbose
     '''
 
     def __init__(self, memory, reserved, log):
-        self.memory = '0'*memory
-        self.queue = []
+        self.memory = ['0'*reserved, '0'*(memory-reserved)]
+        self.queues = [[], []]
 
-        self.reserved = reserved if reserved < memory else memory
-        self.limit = memory
-        self.free = memory
+        self.limit = [reserved, memory-reserved]
+        self.free = [reserved, memory-reserved]
+
 
         self.log = log
 
     def __repr__(self):
-        return f'[{self.memory[:self.reserved]}][{self.memory[self.reserved:]}]'
+        return f'[{self.memory[0]}][{self.memory[1]}]'
 
     def alloc_mem(self, process):
         '''
@@ -35,31 +35,41 @@ class MemoryManager:
         if process.offset >= 0:
             return process.offset
 
-        if process.blocks > (self.limit-self.reserved if process.priority else self.limit):
+        part = int(bool(process.priority))
+
+        if process.blocks > self.limit[part]:
             process.kill = True
 
             if self.log > 1:
                 print('[ERROR] MemoryManager: not enough memory.')
                 msg = f'        P{process.pid} needs {process.blocks} blocks,'
                 msg += ' the system can only ever offer'
-                msg+= f' {self.limit-self.reserved if process.priority else self.limit}.'
+                msg+= f' {self.limit[part]}.'
                 print(msg)
                 print('        Killing process now.')
                 print()
 
             return -1
 
-        if process.blocks <= self.free:
-            if process.priority:
-                segment = self.memory[self.reserved:].split('0'*process.blocks, 1)
-                segment[0] = self.memory[:self.reserved]+segment[0]
-            else:
-                segment = self.memory.split('0'*process.blocks, 1)
+        if process.blocks <= self.free[part]:
+            segment = self.memory[part].split('0'*process.blocks, 1)
 
             if len(segment) == 2:
-                self.memory = segment[0] + '1'*process.blocks + segment[1]
-                self.free -= process.blocks
-                return len(segment[0])
+                self.memory[part] = segment[0] + '1'*process.blocks + segment[1]
+                self.free[part] -= process.blocks
+                offset = len(segment[0]) + (self.limit[0] if part else 0)
+
+                if self.log > 3:
+                    print('[INFO] MemoryManager: memory allocated successfully.')
+                    msg = f'       P{process.pid} allocated {process.blocks} of memory'
+                    msg += ' (block'
+                    msg_1 = f's {offset}-{offset+process.blocks-1})'
+                    msg_2 = f' {offset})'
+                    msg += msg_1 if process.blocks > 1 else msg_2
+                    print(msg)
+                    print()
+
+                return offset
 
             if self.log > 2:
                 print('[WARN] MemoryManager: not enough memory.')
@@ -67,18 +77,18 @@ class MemoryManager:
                 print('       Process sleeping now.')
                 print()
 
-            self.queue.append(process)
+            self.queues[part].append(process)
             return -1
 
         if self.log > 2:
             print('[WARN] MemoryManager: not enough memory.')
             msg = f'       P{process.pid} requested {process.blocks} blocks,'
-            msg += f' only {self.free} left.'
+            msg += f' only {self.free[part]} left.'
             print(msg)
             print('       Process sleeping now.')
             print()
 
-        self.queue.append(process)
+        self.queues[part].append(process)
         return -1
 
     def free_mem(self, process):
@@ -88,20 +98,23 @@ class MemoryManager:
         libera os blocos de memória alocados por um processo 'process'
         '''
 
-        if self.queue.count(process):
-            self.queue.remove(process)
-        else:
-            pre = self.memory[:process.offset]
-            pos = self.memory[process.offset+process.blocks:]
-            self.memory = pre + '0'*process.blocks + pos
-            self.free += process.blocks
+        part = int(bool(process.priority))
 
-        if process.offset > 0:
+        if self.queues[part].count(process):
+            self.queues[part].remove(process)
+        else:
+            offset = process.offset - (self.limit[0] if part else 0)
+            pre = self.memory[part][:offset]
+            pos = self.memory[part][offset+process.blocks:]
+            self.memory[part] = pre + '0'*process.blocks + pos
+            self.free[part] += process.blocks
+            process.offset = -1
+
             transfer = []
-            for proc in self.queue:
-                if proc.blocks <= self.free:
+            for proc in self.queues[part]:
+                if proc.blocks <= self.free[part]:
                     proc.dormant = False
                     transfer.append(proc)
 
             for proc in transfer:
-                self.queue.remove(proc)
+                self.queues[part].remove(proc)

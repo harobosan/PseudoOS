@@ -17,7 +17,7 @@ def read_args(val):
     return None
 
 if __name__ == '__main__':
-    log = 2
+    log = 6
     if len(sys.argv) > 1:
         arg = read_args('log')
         if arg:
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         arg = read_args('slices')
         if arg:
             time_slices = [ int(s) for s in arg ]
-            time_slices.insert(0,-1)
+            time_slices.insert(0, 0)
 
     available_memory = 1024
     if len(sys.argv) > 1:
@@ -72,13 +72,16 @@ if __name__ == '__main__':
         if arg:
             device_list = arg
 
+    cycles = 0
+    if len(sys.argv) > 1:
+        arg = read_args('cycles')
+        if arg:
+            cycles = int(arg[0])
+
     dispatcher = Dispatcher(log)
     scheduler = Scheduler(time_slices, clock_mode, log)
     memory = MemoryManager(available_memory, reserved_memory, log)
     devices = DeviceManager(device_list, log)
-
-    print(time_slices)
-    print(scheduler)
 
     dispatcher.process_parser(pfile)
     files = dispatcher.filesystem_parser(ffile, file_mode)
@@ -88,7 +91,7 @@ if __name__ == '__main__':
     cycle = 0
     clock = time.time()*1000
 
-    while True:
+    while True if cycles < 1 else bool(cycle < cycles):
         delta = time.time()*1000-clock
         clock += delta
 
@@ -101,23 +104,22 @@ if __name__ == '__main__':
 
         dispatcher.ready_processess(cycle, memory, devices, scheduler)
         incoming = bool(dispatcher.arrival_list) or bool(dispatcher.ready_list)
-        done = scheduler.execute_processes(delta, incoming, memory, devices, files)
+        if not scheduler.execute_processes(delta, incoming, memory, devices, files):
+            if log > 4:
+                print()
+                print(f'[ARRIVAL]  > {dispatcher.arrival_list}')
+                print(f'[READYING] > {dispatcher.ready_list}')
+                print(f'[QUEUES]   > {scheduler}')
+                print(f'[DEVICES]  > {devices}')
 
-        if log > 4:
-            print()
-            print(f'[ARRIVAL]  > {dispatcher.arrival_list}')
-            print(f'[READYING] > {dispatcher.ready_list}')
-            print(f'[QUEUES]   > {scheduler}')
-            print(f'[DEVICES]  > {devices}')
+                if log > 5:
+                    print(f'[MEMORY]   > {memory}')
+                    print(f'[STORAGE]  > {files}')
 
-            if log > 5:
-                print(f'[MEMORY]   > {memory}')
-                print(f'[STORAGE]  > {files}')
-
-        if done:
+        else:
             if log > 3:
                 print()
-                print(f'[INFO]     > {cycle-1} cycles to finish all processes.')
+                print(f'[INFO]     > {cycle} cycles to finish all processes.')
 
             if files.mode == 'asynchronous':
                 print()

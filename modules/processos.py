@@ -38,7 +38,7 @@ class Process:
         self.log = log
 
     def __repr__(self):
-        return f'P{self.pid}'
+        return f'P{self.pid}' + ('-S' if self.dormant else '')
 
     def set_requirements(self, printer, scanner, modem, sata):
         '''
@@ -115,6 +115,7 @@ class Process:
         msg = f'P{self.pid} instruction {self.executed}'
         msg += f' of {self.time}' if self.log > 0 else ''
         print(msg)
+        print()
 
     def print_process(self):
         '''
@@ -171,6 +172,7 @@ class Process:
             msg = f'F{operation[0]} operation '
             msg += 'SUCCESS' if result else 'FAILURE'
             print(msg)
+            print()
 
     def print_operation(self, operation):
         '''

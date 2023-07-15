@@ -10,11 +10,11 @@ all: main.py
 run: main.py
 	python3 main.py $(RUN_ARGS)
 
-clean:
-	rm -rf modules/__pycache__/
-
 static:
 	pylint main.py modules
 
 install: requirements.txt
 	pip install -r requirements.txt
+
+clean:
+	rm -rf modules/__pycache__/

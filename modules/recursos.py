@@ -77,7 +77,7 @@ class DeviceManager:
 
         reserved = True
 
-        if process.devices > pow(2,len(self.devices)-1):
+        if process.devices >= pow(2,len(self.devices)):
             process.kill = True
 
             if self.log > 1:
@@ -95,10 +95,17 @@ class DeviceManager:
 
                     if self.log > 2:
                         print('[WARN] DeviceManager: device already in use.')
-                        msg = f'       P{process.pid} requested busy device'
-                        msg += f' {self.devices[did][0]}.'
+                        msg = f'       P{process.pid} requested busy device {self.devices[did][0]}'
+                        msg += '. Adding to process to device queue.'
                         print(msg)
                         print('       Process sleeping now.')
+                        print()
+
+                else:
+                    if self.log > 3:
+                        print('[INFO] DeviceManager: device allocated successfully.')
+                        msg = f'       P{process.pid} requested device {self.devices[did][0]}.'
+                        print(msg)
                         print()
 
         return reserved

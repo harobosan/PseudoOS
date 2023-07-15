@@ -86,11 +86,6 @@ class Scheduler:
 
                 queue[0].execute_process()
 
-                if file_manager.mode == 'synchronous':
-                    if queue[0].operations:
-                        queue[0].print_operation(queue[0].operations[0])
-                        queue[0].execute_operation(file_manager)
-
                 if self.slices[count] > 0:
                     if self.mode == 'cycle':
                         self.quantum += 1
@@ -99,6 +94,10 @@ class Scheduler:
 
                         if self.log > 3:
                             print(f'   quantum {round(self.quantum,2)} of {self.slices[count]}')
+
+                if file_manager.mode == 'synchronous':
+                    if queue[0].operations:
+                        queue[0].execute_operation(file_manager)
 
                 if queue[0].done:
                     if self.slices[count] > 0:
@@ -112,9 +111,7 @@ class Scheduler:
                                 msg += f' {len(queue[0].operations)} file operations in its queue.'
                                 print(msg)
 
-                        elif file_manager.mode == 'batch':
-                            queue[0].print_operations()
-
+                        elif file_manager.mode == 'syncbatch':
                             while queue[0].operations:
                                 queue[0].execute_operation(file_manager)
 

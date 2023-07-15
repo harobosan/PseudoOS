@@ -39,9 +39,11 @@ class Dispatcher:
             self.ready_list = []
 
             for pid, line in enumerate(processes):
-                p = line.split(', ')
-                if len(p) < 2:
-                    p = line.split(',')
+                p = line.split('\n')
+                line = ''.join(p)
+                p = line.split(' ')
+                line = ''.join(p)
+                p = line.split(',')
 
                 for i, n in enumerate(p):
                     p[i] = int(n)
@@ -105,24 +107,31 @@ class Dispatcher:
 
             for i in range(int(filesystem.pop(0))-1,-1,-1):
                 line = filesystem.pop(i)
-                f = line.split(', ')
-                if len(f) < 2:
-                    f = line.split(',')
+                f = line.split('\n')
+                line = ''.join(f)
+                f = line.split(' ')
+                line = ''.join(f)
+                f = line.split(',')
 
                 file_manager.set_file(f[0], int(f[1]), int(f[2]))
 
-            for count, line in enumerate(filesystem):
-                linedata = filesystem[count].split(',')
+            for line in filesystem:
+                f = line.split('\n')
+                line = ''.join(f)
+                f = line.split(' ')
+                line = ''.join(f)
+                f = line.split(',')
                 oid = len(self.oid_list)
-                pid = int(linedata[0])
-                op = int(linedata[1])
-                name = linedata[2]
+                pid = int(f[0])
+                op = int(f[1])
+                name = f[2]
+
                 if op:
                     blocks = 0
                 else:
-                    blocks = int(linedata[3])
+                    blocks = int(f[3])
 
-                self.oid_list.append([oid, pid, op, name[0], blocks])
+                self.oid_list.append([oid, pid, op, name, blocks])
 
         return file_manager
 

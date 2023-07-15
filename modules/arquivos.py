@@ -98,7 +98,7 @@ class FilesystemManager:
                         return False
 
                 pre = self.storage[:metadata[1]]
-                pos = self.storage[metadata[1]+metadata[2]:]
+                pos = self.storage[metadata[1]+(metadata[2]*len(metadata[0])):]
                 self.storage = pre + '0'*metadata[2] + pos
                 self.free -= metadata[2]
                 self.superblock.remove(metadata)
